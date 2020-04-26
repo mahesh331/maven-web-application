@@ -1,7 +1,7 @@
 pipeline{
   agent any
-  tools {
-  maven 'maven3'
+environment{
+PATH=/opt/maven3/bin:$PATH
 }
   stages{
      stage("git checkout"){
@@ -13,10 +13,23 @@ pipeline{
      stage("maven build"){
         steps{
         sh  script: 'mvn clean install package'
-         sh 'mv target/*.war target/webapp.war' 
+         sh 'mv target/*.war target/webapp1.war' 
  }
-     
-     }
+  }
+          stage('deploy'){
+            steps{
+            sshagent(['tomcat-new']) {
+            sh """
+               scp -o StrictHostKeyChecking=no target/webapp1.war ec2-user@172.31.45.218:/opt/tomcat8/webapps/
+               ssh ec2-user@172.31.45.218 /opt/tomcat8/bin/shutdown.sh
+               ssh ec2-user@172.31.45.218 /opt/tomcat8/bin/startup.sh
+            
+            """
+}
+            }
+          
+          }
+  
   }
 
 
